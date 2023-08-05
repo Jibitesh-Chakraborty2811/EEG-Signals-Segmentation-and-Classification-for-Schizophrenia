@@ -16,9 +16,9 @@ col_logo.image(logo_path, use_column_width=True)
 col_name.title("**AI In Medical Domain**")
 
 st.title("EEG Signals Segmentation and Classification for Schizophrenia")
-st.write("**Our Model Gives an Accuracy of 99.26%**")
+st.write("**Our Model Gives an Accuracy of 99.95%**")
 
-model = load_model('model5.h5')
+model = load_model('model6.h5')
 uploaded_file = st.file_uploader("Choose a .edf file to upload", type=["edf"], key="file")
 
 if uploaded_file is not None:
