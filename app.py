@@ -4,6 +4,7 @@ import mne
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 from tensorflow.keras.models import load_model
 
 col_logo, col_name = st.columns([1, 3])
@@ -18,7 +19,7 @@ col_name.title("**AI In Medical Domain**")
 st.title("EEG Signals Segmentation and Classification for Schizophrenia")
 st.write("**Our Model Gives an Accuracy of 99.95%**")
 
-model = load_model('model6.h5')
+model = load_model('schiz1.h5')
 uploaded_file = st.file_uploader("Choose a .edf file to upload", type=["edf"], key="file")
 
 if uploaded_file is not None:
@@ -32,51 +33,18 @@ if uploaded_file is not None:
         f.write(uploaded_file.getbuffer())
         
     raw = mne.io.read_raw_edf(file_name,preload=True)
-    eeg_data = raw.get_data()
-    channel_names = raw.ch_names
+    raw.resample(sfreq=250)
+    data = raw.get_data()
+    df = pd.DataFrame(data)
+    df = df.transpose()
+    info = df.values
+    info = (info - np.mean(info))/np.std(info)
+    pca = PCA(n_components=10)
+    pca.fit(info)
+    info = pca.transform(info)
 
-    # Define the frequency bands of interest
-    frequency_bands = {'delta': (0.5, 4),
-                    'theta': (4, 8),
-                    'alpha': (8, 12),
-                    'beta': (12, 30),
-                    'gamma': (30, 100)}
-
-    # Initialize a dictionary to store the component signals
-    component_signals = {}
-
-    # Extract component signals for each frequency band
-    for band, (fmin, fmax) in frequency_bands.items():
-        # Apply frequency filtering
-        filtered_data = raw.copy().filter(fmin, fmax, fir_design='firwin')
-
-        # Extract filtered EEG data
-        filtered_eeg_data = filtered_data.get_data()
-
-        # Store the component signal for the current band
-        component_signals[band] = filtered_eeg_data
-
-    # Print the shape of each component signal
-    for band, signal in component_signals.items():
-        print(f'{band} component signal shape: {signal.shape}')
-
-
-
-    # Access the component signals from the dictionary
-    alpha_signal = component_signals['alpha']
-    beta_signal = component_signals['beta']
-    gamma_signal = component_signals['gamma']
-    delta_signal = component_signals['delta']
-    theta_signal = component_signals['theta']
-
-    # Combine the component signals column-wise
-    combined_array = np.concatenate((alpha_signal, gamma_signal, theta_signal))
-    combined_array = np.transpose(combined_array)
-
-    combined_array = (combined_array - np.mean(combined_array))/np.std(combined_array)
-
-    X = combined_array[:6250]
-    X = X.reshape([1,6250,57])
+    X = info[:15000]
+    X = X.reshape([1,15000,10])
 
     Y = model.predict(X)
     ans = Y[0][0] * 100
