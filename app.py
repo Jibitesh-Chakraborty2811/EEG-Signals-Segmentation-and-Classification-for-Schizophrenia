@@ -19,8 +19,8 @@ col_name.title("**AI In Medical Domain**")
 st.title("EEG Signals Segmentation and Classification for Schizophrenia")
 st.write("**Our Model Gives an Accuracy of 99.95%**")
 
-model = load_model('schiz1.h5')
-uploaded_file = st.file_uploader("Choose a .edf file to upload", type=["edf"], key="file")
+model = load_model('schiz2.h5')
+uploaded_file = st.file_uploader("Choose a .edf file to upload", type=["edf","fif","set","bdf"], key="file")
 
 if uploaded_file is not None:
     file_name = os.path.basename(uploaded_file.name)
@@ -31,8 +31,18 @@ if uploaded_file is not None:
     
     with open(file_name, "wb") as f:
         f.write(uploaded_file.getbuffer())
-        
-    raw = mne.io.read_raw_edf(file_name,preload=True)
+
+    file_extension = os.path.splitext(file_name)[1].lower()
+
+    if file_extension in [".edf"]:
+        raw = mne.io.read_raw_edf(file_name,preload=True)
+    elif file_extension in [".fif"]:
+        raw = mne.io.read_raw_fif(file_name,preload=True)
+    elif file_extension in [".bdf"]:
+        raw = mne.io.read_raw_bdf(file_name,preload=True)
+    elif file_extension in [".set"]:
+        raw = mne.io.read_raw_eeglab(file_name,preload=True)    
+    
     raw.resample(sfreq=250)
     data = raw.get_data()
     df = pd.DataFrame(data)
